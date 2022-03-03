@@ -2,6 +2,7 @@ package com.react_native_template_67;
 
 import com.facebook.react.ReactActivity;
 import android.os.Bundle;// react-native-screens 需要
+import org.devio.rn.splashscreen.SplashScreen; // 启动页 react-native-splash-screen >= 0.3.1
 
 public class MainActivity extends ReactActivity {
 
@@ -20,6 +21,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+  SplashScreen.show(this);  // 启动页
     super.onCreate(null);
   }
 }

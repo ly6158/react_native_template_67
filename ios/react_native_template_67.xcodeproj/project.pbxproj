@@ -11,7 +11,9 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		4DC330CC2424470EA480F98B /* antfill.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7F5CDC8F6689418597F43987 /* antfill.ttf */; };
+		C2EBE75622B746B0A723F642 /* antoutline.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3F0DBB6C18CE42BF8FC526EF /* antoutline.ttf */; };
+		CDB07E0627C4B35B0013836B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CDB07E0527C4B35B0013836B /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,11 +26,13 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = react_native_template_67/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = react_native_template_67/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = react_native_template_67/main.m; sourceTree = "<group>"; };
+		3F0DBB6C18CE42BF8FC526EF /* antoutline.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = antoutline.ttf; path = "../node_modules/@ant-design/icons-react-native/fonts/antoutline.ttf"; sourceTree = "<group>"; };
 		4335E049B78B93B0B2C51046 /* Pods-react_native_template_67.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-react_native_template_67.debug.xcconfig"; path = "Target Support Files/Pods-react_native_template_67/Pods-react_native_template_67.debug.xcconfig"; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = react_native_template_67/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		7F5CDC8F6689418597F43987 /* antfill.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = antfill.ttf; path = "../node_modules/@ant-design/icons-react-native/fonts/antfill.ttf"; sourceTree = "<group>"; };
 		9C659AFEA78AB451655B6FA3 /* libPods-react_native_template_67-react_native_template_67Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-react_native_template_67-react_native_template_67Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A166493786FDC9935DE535F4 /* libPods-react_native_template_67.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-react_native_template_67.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B37CF0A45BFE80EB69203DCC /* Pods-react_native_template_67.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-react_native_template_67.release.xcconfig"; path = "Target Support Files/Pods-react_native_template_67/Pods-react_native_template_67.release.xcconfig"; sourceTree = "<group>"; };
+		CDB07E0527C4B35B0013836B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FC6D296699F0EAAD54B5365F /* Pods-react_native_template_67-react_native_template_67Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-react_native_template_67-react_native_template_67Tests.debug.xcconfig"; path = "Target Support Files/Pods-react_native_template_67-react_native_template_67Tests/Pods-react_native_template_67-react_native_template_67Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -69,8 +73,8 @@
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
+				CDB07E0527C4B35B0013836B /* LaunchScreen.storyboard */,
 			);
 			name = react_native_template_67;
 			sourceTree = "<group>";
@@ -83,6 +87,15 @@
 				9C659AFEA78AB451655B6FA3 /* libPods-react_native_template_67-react_native_template_67Tests.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4CEFFEA3BE7743C9BDF95829 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7F5CDC8F6689418597F43987 /* antfill.ttf */,
+				3F0DBB6C18CE42BF8FC526EF /* antoutline.ttf */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -101,6 +114,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BCEC5552A21A4066A29D0D14 /* Pods */,
+				4CEFFEA3BE7743C9BDF95829 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -187,8 +201,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				CDB07E0627C4B35B0013836B /* LaunchScreen.storyboard in Resources */,
+				4DC330CC2424470EA480F98B /* antfill.ttf in Resources */,
+				C2EBE75622B746B0A723F642 /* antoutline.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
