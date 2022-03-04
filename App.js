@@ -547,77 +547,82 @@ class Computed extends React.Component {
     return (
       <View style={ComputedStyles.container}>
         <SafeAreaView style={ComputedStyles.safe_container}>
-          <Header title={"计算"} isEdit={true} isExit={true} onExit={() => this.onExit()} onEdit={() => this.onEdit()} />
-          <View style={ComputedStyles.computed_wrap}>
-            <LabelInput
-              value={this.state.number}
-              label={"便携机编号"}
-              textChange={text => this.onNumberChange(text)}
-            />
-            <LabelInput
-              value={this.state.borrow_user}
-              label={"借用人"}
-              textChange={text => this.onBorrowUserChange(text)}
-            />
-            <List>
-              <DatePicker
-                value={this.state.borrow_date}
-                mode="date"
-                minDate={new Date(1970, 1, 1)}
-                maxDate={new Date(2099, 12, 31)}
-                format="YYYY-MM-DD"
-                onChange={date => this.onBorrowDateChange(date)}>
-                <List.Item arrow="horizontal">借用时间</List.Item>
-              </DatePicker>
-            </List>
-            <List>
-              <DatePicker
-                value={this.state.repaid_date}
-                mode="date"
-                minDate={new Date(1970, 1, 1)}
-                maxDate={new Date(2099, 12, 31)}
-                format="YYYY-MM-DD"
-                onChange={date => this.onRepaidDateChange(date)}>
-                <List.Item arrow="horizontal">归还时间</List.Item>
-              </DatePicker>
-            </List>
-            <LabelInput
-              value={this.state.renewal_number}
-              label={"续借次数"}
-              keyboardType={"numeric"}
-              maxLength={1}
-              textChange={text => this.onRenewalNumberChange(text)}
-            />
-            <List>
-              <Picker
-                data={cycleData}
-                cols={1}
-                value={this.state.renewal_cycle}
-                onChange={text => this.onRenewalCycleChange(text)}>
-                <List.Item arrow="horizontal">续借周期</List.Item>
-              </Picker>
-            </List>
-
-            <View style={ComputedStyles.button_wrap}>
-              <CommonButton title={"重置"} click={() => this.onReset()} />
-              <CommonButton
-                type={"primary"}
-                title={"计算"}
-                click={() => this.onComputed()}
+          <ScrollView>
+            <Header title={"计算"} isEdit={true} isExit={true} onExit={() => this.onExit()}
+                    onEdit={() => this.onEdit()} />
+            <View style={ComputedStyles.computed_wrap}>
+              <LabelInput
+                value={this.state.number}
+                label={"便携机编号"}
+                maxLength={18}
+                textChange={text => this.onNumberChange(text)}
               />
+              <LabelInput
+                value={this.state.borrow_user}
+                label={"借用人"}
+                maxLength={10}
+                textChange={text => this.onBorrowUserChange(text)}
+              />
+              <List>
+                <DatePicker
+                  value={this.state.borrow_date}
+                  mode="date"
+                  minDate={new Date(1970, 1, 1)}
+                  maxDate={new Date(2099, 12, 31)}
+                  format="YYYY-MM-DD"
+                  onChange={date => this.onBorrowDateChange(date)}>
+                  <List.Item arrow="horizontal">借用时间</List.Item>
+                </DatePicker>
+              </List>
+              <List>
+                <DatePicker
+                  value={this.state.repaid_date}
+                  mode="date"
+                  minDate={new Date(1970, 1, 1)}
+                  maxDate={new Date(2099, 12, 31)}
+                  format="YYYY-MM-DD"
+                  onChange={date => this.onRepaidDateChange(date)}>
+                  <List.Item arrow="horizontal">归还时间</List.Item>
+                </DatePicker>
+              </List>
+              <LabelInput
+                value={this.state.renewal_number}
+                label={"续借次数"}
+                keyboardType={"numeric"}
+                maxLength={1}
+                textChange={text => this.onRenewalNumberChange(text)}
+              />
+              <List>
+                <Picker
+                  data={cycleData}
+                  cols={1}
+                  value={this.state.renewal_cycle}
+                  onChange={text => this.onRenewalCycleChange(text)}>
+                  <List.Item arrow="horizontal">续借周期</List.Item>
+                </Picker>
+              </List>
+
+              <View style={ComputedStyles.button_wrap}>
+                <CommonButton title={"重置"} click={() => this.onReset()} />
+                <CommonButton
+                  type={"primary"}
+                  title={"计算"}
+                  click={() => this.onComputed()}
+                />
+              </View>
             </View>
-          </View>
-          {isResult && (
-            <ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
-                            key_4={this.state.key_4} />
-          )}
-          <View style={ComputedStyles.history_button}>
-            <TouchableOpacity
-              onPress={() => this.onHistory()}
-              activeOpacity={0.5}>
-              <Text style={ComputedStyles.history_content}>历史记录</Text>
-            </TouchableOpacity>
-          </View>
+            {isResult && (
+              <ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
+                              key_4={this.state.key_4} />
+            )}
+            <View style={ComputedStyles.history_button}>
+              <TouchableOpacity
+                onPress={() => this.onHistory()}
+                activeOpacity={0.5}>
+                <Text style={ComputedStyles.history_content}>历史记录</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </SafeAreaView>
       </View>
     );
@@ -826,8 +831,8 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      isLogin: true,
-      page: "history",// computed password history
+      isLogin: false,
+      page: "computed",// computed password history
     };
   }
 
