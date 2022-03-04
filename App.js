@@ -145,6 +145,19 @@ class Login extends React.Component {
         <ImageBackground
           source={require("./src/assets/images/login_background.png")}
           style={styles.login_basemap}>
+
+          <View style={styles.login_info_wrap}>
+            <ImageBackground
+              source={require("./src/assets/images/login_logo.png")}
+              style={styles.login_logo}>
+            </ImageBackground>
+            <ImageBackground
+              source={require("./src/assets/images/login_info.png")}
+              style={styles.login_info}>
+            </ImageBackground>
+          </View>
+
+
           <ImageBackground
             source={require("./src/assets/images/login_layout.png")}
             resizeMethod={"resize"} resizeMode={"stretch"}
@@ -157,6 +170,7 @@ class Login extends React.Component {
               <TextInput
                 style={styles.login_row_input_wrap}
                 placeholder={"初始账号: admin"}
+                placeholderTextColor={"#909399"}
                 onChangeText={text => this.onAccountChangeText(text)}
                 value={this.state.account}
               />
@@ -171,6 +185,7 @@ class Login extends React.Component {
                 style={styles.login_row_input_wrap}
                 secureTextEntry={true}
                 placeholder={"初始密码: 123456"}
+                placeholderTextColor={"#909399"}
                 onChangeText={text => this.onPasswordChangeText(text)}
                 returnKeyType={"done"}
                 onSubmitEditing={this.login}
@@ -374,8 +389,8 @@ class Computed extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      number: "A445DFSEW342",
-      borrow_user: "013970",
+      number: "",
+      borrow_user: "",
       borrow_date: new Date("2022-02-17"), // '20220217'
       repaid_date: new Date("2022-05-23"), // '20220523'
       renewal_number: "1",
@@ -475,6 +490,18 @@ class Computed extends React.Component {
   }
 
   onComputed() {
+    if (!this.state.borrow_user) {
+      Alert.alert("请输入借用人");
+
+      return null;
+    }
+
+    if (!this.state.number) {
+      Alert.alert("请输入便携机编号");
+      return null;
+    }
+
+
     let borrow_date = parseTime(this.state.borrow_date, "{y}{m}{d}");
     let repaid_date = parseTime(this.state.repaid_date, "{y}{m}{d}");
     let renewal_cycle = this.state.renewal_cycle[0];
@@ -869,6 +896,23 @@ const styles = StyleSheet.create({
     height: height,
     resizeMode: "contain",
   },
+  login_info_wrap: {
+    width,
+    height: 50,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: height * 0.2,
+  },
+  login_info: {
+    width: 139,
+    height: 35,
+  },
+  login_logo: {
+    width: 35,
+    height: 35,
+    marginRight: 20,
+  },
   login_layout: {
     width: width * 0.9,
     height: 64 * 2 + height * 0.1 + 80,
@@ -876,7 +920,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingLeft: width * 0.1,
     paddingRight: width * 0.1,
-    marginTop: height * 0.3,
+    marginTop: 20,
   },
   login_form_row: {
     height: 42,
@@ -902,6 +946,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     borderLeftWidth: 1,
     borderLeftColor: "#ccc",
+    color: "#000000",
   },
   login_button_wrap: {
     marginTop: 20,
@@ -1029,6 +1074,9 @@ const ComputedResultStyles = StyleSheet.create({
   },
   result_prompt: {
     paddingLeft: 24 + 10,
+    color: "#999999" +
+      "" +
+      "",
   },
   result_line: {
     width: "100%",
