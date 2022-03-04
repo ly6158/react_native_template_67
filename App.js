@@ -400,6 +400,7 @@ class Computed extends React.Component {
       key_2: "",
       key_3: "",
       key_4: "",
+      opera_time: new Date().getTime(),
     };
   }
 
@@ -464,17 +465,23 @@ class Computed extends React.Component {
     storage.load({
       key: "ComputedHistory",
     }).then(res => {
-
-
       let index = res.findIndex(item => item.key === key);
 
       if (index === -1) {
         storage.save({
           key: "ComputedHistory",
-          data: [].concat(res, [{ key, ...this.state }]),
+          data: [].concat([{ key, ...this.state }], res),
         });
       } else {
-        console.log("已存在");
+        res.forEach(item => {
+          if (item.key === key) {
+            item.opera_time = new Date().getTime();
+          }
+        });
+        storage.save({
+          key: "ComputedHistory",
+          data: [...res],
+        });
       }
     }).catch(err => {
       storage.save({
@@ -511,6 +518,7 @@ class Computed extends React.Component {
     let keys = computed_str(str, 6, 4);
 
     this.setState({
+      opera_time: new Date().getTime(),
       keys,
       key_1: keys[0],
       key_2: keys[1],
@@ -519,8 +527,6 @@ class Computed extends React.Component {
     });
 
     this.addHistory();
-
-
   }
 
   onHistory() {
@@ -747,6 +753,7 @@ class History extends React.Component {
   getItem({ item }) {
     const repaid_date = parseTime(new Date(item.repaid_date), "{y}-{m}-{d}");
     const borrow_date = parseTime(new Date(item.borrow_date), "{y}-{m}-{d}");
+    const opera_time = parseTime(new Date(item.opera_time), "{y}-{m}-{d} {h}:{i}:{s}");
     const renewal_cycle = item.renewal_cycle[0];
 
     const renewal_cycle_name = cycleData.find(c => c.value === renewal_cycle).label;
@@ -782,6 +789,12 @@ class History extends React.Component {
           <Text style={HistoryStyles.row_content}>{renewal_cycle_name}</Text>
         </View>
       </View>
+      <View style={HistoryStyles.list_row_wrap}>
+        <View style={HistoryStyles.list_row_item_wrap}>
+          <Text style={HistoryStyles.row_title}>操作时间</Text>
+          <Text style={HistoryStyles.row_content}>{opera_time}</Text>
+        </View>
+      </View>
 
       <ComputedResult key_1={item.key_1} key_2={item.key_2} key_3={item.key_3}
                       key_4={item.key_4} />
@@ -789,13 +802,14 @@ class History extends React.Component {
   }
 
   render() {
+    const historyList = this.state.historyList.sort((a, b) => b.opera_time - a.opera_time);
     return (
       <View style={HistoryStyles.container}>
         <SafeAreaView style={HistoryStyles.safe_container}>
           <Header title={"历史记录"} isBack={true} back={() => this.onBack()} />
           <FlatList
             style={HistoryStyles.list_wrap}
-            data={this.state.historyList}
+            data={historyList}
             renderItem={item => this.getItem(item)}
             keyExtractor={item => item.key}
           />
@@ -812,8 +826,8 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      isLogin: false,
-      page: "computed",// computed password history
+      isLogin: true,
+      page: "history",// computed password history
     };
   }
 
@@ -1074,9 +1088,7 @@ const ComputedResultStyles = StyleSheet.create({
   },
   result_prompt: {
     paddingLeft: 24 + 10,
-    color: "#999999" +
-      "" +
-      "",
+    color: "#999999",
   },
   result_line: {
     width: "100%",
@@ -1165,7 +1177,7 @@ const HistoryStyles = StyleSheet.create({
     height: height - 48,
   },
   list_item_wrap: {
-    height: 180 + 170,
+    height: 240 + 170,
     width,
     backgroundColor: "#fff",
     marginBottom: 18,
@@ -1175,6 +1187,8 @@ const HistoryStyles = StyleSheet.create({
     height: 60,
     flexDirection: "row",
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e6e6e6",
   },
   list_row_item_wrap: {
     width: width / 2,
@@ -1183,8 +1197,7 @@ const HistoryStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-start",
     paddingLeft: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e6e6e6",
+
   },
   row_title: {
     color: "#999",
