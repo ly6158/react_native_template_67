@@ -25,11 +25,12 @@ import InputItem from "@ant-design/react-native/lib/input-item";
 import Provider from "@ant-design/react-native/lib/provider";
 
 import SplashScreen from "react-native-splash-screen";
+import { getUniqueId } from "react-native-device-info";
 
 import CommonButton from "./src/components/CommonButton";
 
 import { parseTime } from "./src/utils";
-import { hex_md5 } from "./src/utils/md5";
+import md5 from "js-md5";
 
 const { width, height } = Dimensions.get("window");
 
@@ -76,6 +77,25 @@ const getUserInfo = () => {
   });
 };
 
+const get6LengthKey = key => {
+  return key.charAt(3).toUpperCase() +
+    key.charAt(7) +
+    key.charAt(11).toUpperCase() +
+    key.charAt(15) +
+    key.charAt(19).toUpperCase() +
+    key.charAt(23);
+};
+const get8LengthKey = key => {
+  return key.charAt(3).toUpperCase() +
+    key.charAt(7) +
+    key.charAt(11).toUpperCase() +
+    key.charAt(15) +
+    key.charAt(19).toUpperCase() +
+    key.charAt(23) +
+    key.charAt(27).toUpperCase() +
+    key.charAt(31);
+};
+
 /**
  *
  * @param str 待加密字符串
@@ -85,15 +105,10 @@ const getUserInfo = () => {
 const computed_str = (str, keyLength, keyCount) => {
   const result = [];
   for (let i = 0; i < keyCount; i++) {
-    let newStr = hex_md5(`${str}${i}`);
-
-    let key =
-      newStr.charAt(3).toUpperCase() +
-      newStr.charAt(7) +
-      newStr.charAt(11).toUpperCase() +
-      newStr.charAt(15) +
-      newStr.charAt(19).toUpperCase() +
-      newStr.charAt(23);
+    let newStr = md5.hex(`${str}${i}`);
+    let key = "";
+    if (keyLength === 6) key = get6LengthKey(newStr);
+    if (keyLength === 8) key = get8LengthKey(newStr);
 
     result.push(key);
   }
@@ -205,6 +220,92 @@ class Login extends React.Component {
       </View>
     );
   }
+}
+
+/**
+ * 授权页面
+ */
+class Authorize extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      key: "",// 授权码
+      code: "",// 认证码
+    };
+  }
+
+  componentDidMount() {
+    const uniqueId = getUniqueId();
+    const uniqueKey = uniqueId.substr(0, 6);
+    this.onKeyChangeText(uniqueKey);
+
+    // 测试使用
+    const now = parseTime(new Date(), "{y}-{m}-{d}");
+    const key = `${uniqueKey}${now}`;
+    const code = computed_str(key, 6, 1)[0];
+    console.log("key: ", key);
+    console.log("授权秘钥: ", code);
+    // console.log("测试code: ", computed_str("bcccdd2022-05-24", 6, 1)[0]);
+
+
+  }
+
+  onKeyChangeText(key) {
+    this.setState({ key: key });
+  }
+
+  onCodeChangeText(code) {
+    this.setState({ code: code });
+  }
+
+  onAuthorize() {
+    const now = parseTime(new Date(), "{y}-{m}-{d}");
+    const key = `${this.state.key}${now}`;
+    const code = computed_str(key, 6, 1)[0];
+    if (code === this.state.code) {
+      storage.save({
+        key: "AuthorizeKey",
+        data: {
+          isAuthorize: true,
+          code: code,
+        },
+      }).then().catch().finally(() => {
+        this.props.onAuthorized();
+      });
+
+    } else {
+      Alert.alert("授权秘钥错误!");
+    }
+  }
+
+  render() {
+    return (<View style={AuthorizeStyles.container}>
+      <View style={AuthorizeStyles.body}>
+        <Text style={AuthorizeStyles.title}>授权认证</Text>
+        <Text style={AuthorizeStyles.key}>授权码: {this.state.key}</Text>
+        <View style={AuthorizeStyles.code_container}>
+          <TextInput
+            style={AuthorizeStyles.code_input}
+            placeholder={"请输入6位认证码"}
+            placeholderTextColor={"#909399"}
+            onChangeText={text => this.onCodeChangeText(text)}
+            returnKeyType={"done"}
+            onSubmitEditing={this.onAuthorize}
+            value={this.state.code}
+          />
+        </View>
+
+        <Button
+          type="primary"
+          style={AuthorizeStyles.confirm_button}
+          onPress={() => this.onAuthorize()}>
+          授权
+        </Button>
+      </View>
+    </View>);
+  }
+
+
 }
 
 /**
@@ -382,6 +483,26 @@ class ComputedResult extends React.Component {
   }
 }
 
+class ComputedNewResult extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+      <View style={ComputedNewResultStyles.container}>
+        <View style={ComputedNewResultStyles.frame}>
+          <Text style={ComputedNewResultStyles.result_title}>计算结果</Text>
+          <Text style={ComputedNewResultStyles.result_content}>
+            {this.props.key_1}
+          </Text>
+        </View>
+
+      </View>
+    );
+  }
+}
+
 /**
  * 计算页面
  */
@@ -391,9 +512,9 @@ class Computed extends React.Component {
     this.state = {
       number: "",
       borrow_user: "",
-      borrow_date: new Date("2022-02-17"), // '20220217'
-      repaid_date: new Date("2022-05-23"), // '20220523'
-      renewal_number: "1",
+      borrow_date: new Date(),
+      repaid_date: new Date(),
+      renewal_number: "3",
       renewal_cycle: ["month"],
       keys: [],
       key_1: "",
@@ -402,6 +523,18 @@ class Computed extends React.Component {
       key_4: "",
       opera_time: new Date().getTime(),
     };
+  }
+
+  componentDidMount() {
+    let now = new Date();
+    const borrow_date = new Date(parseTime(now, "{y}-{m}-{d}"));
+    let next = now.setMonth(now.getMonth() + 1);
+    const repaid_date = new Date(parseTime(next, "{y}-{m}-{d}"));
+
+    this.setState({
+      borrow_date,
+      repaid_date,
+    });
   }
 
   onNumberChange(text) {
@@ -460,7 +593,7 @@ class Computed extends React.Component {
 
   addHistory() {
     let dataStr = JSON.stringify(this.state);
-    let key = hex_md5(dataStr);
+    let key = md5.hex(dataStr);
 
     storage.load({
       key: "ComputedHistory",
@@ -498,7 +631,7 @@ class Computed extends React.Component {
 
   onComputed() {
     if (!this.state.borrow_user) {
-      Alert.alert("请输入借用人");
+      Alert.alert("请输入携带人");
 
       return null;
     }
@@ -511,9 +644,10 @@ class Computed extends React.Component {
 
     let borrow_date = parseTime(this.state.borrow_date, "{y}{m}{d}");
     let repaid_date = parseTime(this.state.repaid_date, "{y}{m}{d}");
-    let renewal_cycle = this.state.renewal_cycle[0];
+    // let renewal_cycle = this.state.renewal_cycle[0];
 
-    let str = `${this.state.borrow_user}${this.state.number}${borrow_date}${repaid_date}${this.state.renewal_number}${renewal_cycle}`;
+    // let str = `${this.state.borrow_user}${this.state.number}${borrow_date}${repaid_date}${this.state.renewal_number}${renewal_cycle}`;
+    let str = `${this.state.borrow_user}${this.state.number}${borrow_date}${repaid_date}`;
 
     let keys = computed_str(str, 6, 4);
 
@@ -559,7 +693,7 @@ class Computed extends React.Component {
               />
               <LabelInput
                 value={this.state.borrow_user}
-                label={"借用人"}
+                label={"携带人"}
                 maxLength={10}
                 textChange={text => this.onBorrowUserChange(text)}
               />
@@ -585,7 +719,7 @@ class Computed extends React.Component {
                   <List.Item arrow="horizontal">归还时间</List.Item>
                 </DatePicker>
               </List>
-              <LabelInput
+              {/*<LabelInput
                 value={this.state.renewal_number}
                 label={"续借次数"}
                 keyboardType={"numeric"}
@@ -600,7 +734,7 @@ class Computed extends React.Component {
                   onChange={text => this.onRenewalCycleChange(text)}>
                   <List.Item arrow="horizontal">续借周期</List.Item>
                 </Picker>
-              </List>
+              </List>*/}
 
               <View style={ComputedStyles.button_wrap}>
                 <CommonButton title={"重置"} click={() => this.onReset()} />
@@ -612,14 +746,16 @@ class Computed extends React.Component {
               </View>
             </View>
             {isResult && (
-              <ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
-                              key_4={this.state.key_4} />
+              /*<ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
+                              key_4={this.state.key_4} />*/
+
+              <ComputedNewResult key_1={this.state.key_1} />
             )}
             <View style={ComputedStyles.history_button}>
               <TouchableOpacity
                 onPress={() => this.onHistory()}
                 activeOpacity={0.5}>
-                <Text style={ComputedStyles.history_content}>历史记录</Text>
+                <Text style={ComputedStyles.history_content}>历史记录 ></Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -761,12 +897,12 @@ class History extends React.Component {
     const opera_time = parseTime(new Date(item.opera_time), "{y}-{m}-{d} {h}:{i}:{s}");
     const renewal_cycle = item.renewal_cycle[0];
 
-    const renewal_cycle_name = cycleData.find(c => c.value === renewal_cycle).label;
+    // const renewal_cycle_name = cycleData.find(c => c.value === renewal_cycle).label;
 
     return (<View style={HistoryStyles.list_item_wrap}>
       <View style={HistoryStyles.list_row_wrap}>
         <View style={HistoryStyles.list_row_item_wrap}>
-          <Text style={HistoryStyles.row_title}>借用人</Text>
+          <Text style={HistoryStyles.row_title}>携带人</Text>
           <Text style={HistoryStyles.row_content}>{item.borrow_user}</Text>
         </View>
         <View style={HistoryStyles.list_row_item_wrap}>
@@ -784,7 +920,7 @@ class History extends React.Component {
           <Text style={HistoryStyles.row_content}>{repaid_date}</Text>
         </View>
       </View>
-      <View style={HistoryStyles.list_row_wrap}>
+      {/*<View style={HistoryStyles.list_row_wrap}>
         <View style={HistoryStyles.list_row_item_wrap}>
           <Text style={HistoryStyles.row_title}>续借次数</Text>
           <Text style={HistoryStyles.row_content}>{item.renewal_number}</Text>
@@ -793,7 +929,7 @@ class History extends React.Component {
           <Text style={HistoryStyles.row_title}>续借周期</Text>
           <Text style={HistoryStyles.row_content}>{renewal_cycle_name}</Text>
         </View>
-      </View>
+      </View>*/}
       <View style={HistoryStyles.list_row_wrap}>
         <View style={HistoryStyles.list_row_item_wrap}>
           <Text style={HistoryStyles.row_title}>操作时间</Text>
@@ -801,8 +937,9 @@ class History extends React.Component {
         </View>
       </View>
 
-      <ComputedResult key_1={item.key_1} key_2={item.key_2} key_3={item.key_3}
-                      key_4={item.key_4} />
+      {/*<ComputedResult key_1={item.key_1} key_2={item.key_2} key_3={item.key_3}
+                      key_4={item.key_4} />*/}
+      <ComputedNewResult key_1={item.key_1} />
     </View>);
   }
 
@@ -831,17 +968,45 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      isLogin: false,
-      page: "computed",// computed password history
+      isLogin: false,// 是否登陆
+      isAuthorize: false,// 是否授权
+      page: "authorize",// computed password history authorize
     };
   }
 
   componentDidMount() {
     SplashScreen.hide();
+
+    this.checkAuthorize();
+  }
+
+  checkAuthorize() {
+    const toAuthorizePage = () => {
+      this.setState({
+        isAuthorize: false,// 是否授权
+        isLogin: true,
+        page: "authorize",
+      });
+    };
+    storage.load({
+      key: "AuthorizeKey",
+    }).then(res => {
+      if (res && res.isAuthorize) {
+        this.setState({
+          isAuthorize: true,
+          isLogin: false,
+          page: "login",
+        });
+      } else {
+        toAuthorizePage();
+      }
+    }).catch(err => {
+      toAuthorizePage();
+    });
   }
 
   login() {
-    this.setState({ isLogin: true });
+    this.setState({ isLogin: true, page: "computed" });
   }
 
   closeEditPassword() {
@@ -865,7 +1030,7 @@ class App extends React.Component {
   onExit() {
     this.setState({
       isLogin: false,
-      page: "computed",
+      page: "login",
     });
     ToastAndroid.show("退出成功!", ToastAndroid.SHORT);
   }
@@ -876,24 +1041,37 @@ class App extends React.Component {
     });
   }
 
+  onAuthorized() {
+    this.setState({
+      isAuthorize: true,
+      isLogin: false,
+      page: "login",
+    });
+  }
+
   render() {
     return (
       <Provider>
         <SafeAreaView>
           <StatusBar />
-          {this.state.isLogin && this.state.page === "computed" && (
+
+          {!this.state.isAuthorize && (
+            <Authorize onAuthorized={() => this.onAuthorized()} />
+          )}
+
+          {this.state.isAuthorize && this.state.isLogin && this.state.page === "computed" && (
             <Computed onEdit={() => this.onEdit()} onExit={() => this.onExit()} onHistory={() => this.onHistory()} />
           )}
 
-          {this.state.isLogin && this.state.page === "history" && (
+          {this.state.isAuthorize && this.state.isLogin && this.state.page === "history" && (
             <History onClose={() => this.closeHistory()} />
           )}
 
-          {this.state.isLogin && this.state.page === "password" && (
+          {this.state.isAuthorize && this.state.isLogin && this.state.page === "password" && (
             <EditPassword onClose={() => this.closeEditPassword()} />
           )}
 
-          {!this.state.isLogin && (
+          {this.state.isAuthorize && !this.state.isLogin && this.state.page === "login" && (
             <Login
               status={this.state.isLogin}
               loginChange={() => this.login()}
@@ -1102,6 +1280,32 @@ const ComputedResultStyles = StyleSheet.create({
   },
 });
 
+const ComputedNewResultStyles = StyleSheet.create({
+  container: {
+    width,
+    height: 120,
+    backgroundColor: "#fff",
+  },
+  frame: {
+    width: width - 20,
+    height: 100,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginLeft: 10,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  result_title: {
+    fontSize: 18,
+  },
+  result_content: {
+    fontSize: 28,
+    color: "#6294fd",
+  },
+});
+
 const ComputedStyles = StyleSheet.create({
   container: {
     width: width,
@@ -1121,7 +1325,6 @@ const ComputedStyles = StyleSheet.create({
     justifyContent: "space-around",
   },
 
-
   history_button: {
     width: width,
     height: 40,
@@ -1134,6 +1337,7 @@ const ComputedStyles = StyleSheet.create({
   history_content: {
     fontSize: 18,
     color: "#6294fd",
+    height: 40,
   },
 });
 
@@ -1182,7 +1386,7 @@ const HistoryStyles = StyleSheet.create({
     height: height - 48,
   },
   list_item_wrap: {
-    height: 240 + 170,
+    height: 180 + 170 - 50,
     width,
     backgroundColor: "#fff",
     marginBottom: 18,
@@ -1211,6 +1415,50 @@ const HistoryStyles = StyleSheet.create({
   row_content: {
     color: "#333",
     fontSize: 15,
+  },
+});
+
+const AuthorizeStyles = StyleSheet.create({
+  container: {
+    width: width,
+    height: height,
+  },
+  body: {
+    width: width * 0.8,
+    marginTop: height * 0.2,
+    marginLeft: width * 0.1,
+  },
+  title: {
+    fontSize: 28,
+    color: "#303133",
+    marginBottom: 30,
+  },
+  key: {
+    fontSize: 18,
+    color: "#606266",
+    marginBottom: 20,
+  },
+  code_container: {
+    height: 42,
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginBottom: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  code_input: {
+    width: width * 0.8 - 41 - 8,
+    height: 40,
+    paddingLeft: 8,
+    paddingRight: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: "#ccc",
+    color: "#000000",
+  },
+  confirm_button: {
+    marginTop: 20,
   },
 });
 
