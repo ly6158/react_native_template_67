@@ -25,7 +25,6 @@
 > - 需要在主页面引入 import 'react-native-gesture-handler';
 >- 需要在原生环境里面[配置](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/installation/) react-native-reanimated
 
-
 Icon 使用的是 @ant-design/icons-react-native(需要link)
 > npx react-native link @ant-design/icons-react-native
 
