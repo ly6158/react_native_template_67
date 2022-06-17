@@ -1,4 +1,4 @@
-package com.react_native_template_67;
+package com.bwda.calculate_app;
 
 import com.facebook.react.ReactActivity;
 import android.os.Bundle;// react-native-screens 需要

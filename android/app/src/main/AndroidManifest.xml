@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.react_native_template_67">
+  package="com.bwda.calculate_app">
 
     <uses-permission android:name="android.permission.INTERNET" />
 

@@ -66,7 +66,7 @@ const getUserInfo = () => {
       .then(res => {
         resolve(res);
       })
-      .catch(err => {
+      .catch(() => {
         resolve(defaultUserInfo);
         storage.save({
           key: 'UserInfo',
@@ -101,22 +101,23 @@ const get8LengthKey = key => {
   );
 };
 
-const exportExcel = (data = []) => {
+/**
+ * 数据导出为Excel
+ * @param {数据} data
+ */
+const exportExcel = (data = [], fileName) => {
   let wb = XLSX.utils.book_new();
   let ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, 'Users');
   const wbout = XLSX.write(wb, {type: 'binary', bookType: 'xlsx'});
 
   // Write generated excel to Storage
-  FS.writeFile(
-    FS.ExternalDirectoryPath + '/计算APP-计算历史记录.xlsx',
-    wbout,
-    'ascii',
-  )
+  // 计算项目-计算历史记录
+  FS.writeFile(`${FS.ExternalDirectoryPath}/${fileName}.xlsx`, wbout, 'ascii')
     .then(r => {
       Alert.alert(
         '导出成功！',
-        '因系统限制，文件保存于Android/data/com.bwda_app_calculate/file文件夹。',
+        '因系统限制，文件保存于Android/data/com.bwda.calculate_app/file文件夹。',
       );
     })
     .catch(e => {
@@ -550,20 +551,84 @@ class Computed extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      number: 'BXJSJ0000',
-      borrow_user: '',
-      borrow_date: new Date(),
-      repaid_date: new Date(),
-      renewal_number: '3',
-      renewal_cycle: ['month'],
-      overdue_borrow_number: '1', // 超期借用次数
-      overdue_repaid_date: new Date(), // 超期归还时间
-      keys: [],
-      key_1: '',
-      key_2: '',
-      key_3: '',
-      key_4: '',
-      opera_time: new Date().getTime(),
+      isPage: 'delay', // delay loan delay_history loan_history
+    };
+  }
+
+  componentDidMount() {}
+
+  chnagePage(page) {
+    this.setState({
+      isPage: page,
+    });
+  }
+
+  onExit() {
+    this.props.onExit();
+  }
+
+  onEdit() {
+    this.props.onEdit();
+  }
+
+  render() {
+    return (
+      <View style={ComputedStyles.container}>
+        {this.state.isPage === 'delay' && (
+          <DelayApplyComputed
+            change={page => {
+              this.chnagePage(page);
+            }}
+            onEdit={() => this.onEdit()}
+            onExit={() => this.onExit()}
+            onHistory={() => this.chnagePage('delay_history')}
+          />
+        )}
+        {this.state.isPage === 'delay_history' && (
+          <DelayApplyHistory
+            change={page => {
+              this.chnagePage(page);
+            }}
+          />
+        )}
+        {this.state.isPage === 'loan' && (
+          <LoanApplyComputed
+            change={page => {
+              this.chnagePage(page);
+            }}
+            onEdit={() => this.onEdit()}
+            onExit={() => this.onExit()}
+            onHistory={() => this.chnagePage('loan_history')}
+          />
+        )}
+        {this.state.isPage === 'loan_history' && (
+          <LoanApplyHistory
+            change={page => {
+              this.chnagePage(page);
+            }}
+          />
+        )}
+      </View>
+    );
+  }
+}
+
+/**
+ * 延期计算页面
+ */
+class DelayApplyComputed extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      apply_number: '0409.2022', // 初始借用申请单号
+      borrow_user: '', // 携带人姓名
+      machine_number: 'BXJSJ0000', // 便携机编号
+      borrow_date: new Date(), // 开始借用时间
+      repaid_date: new Date(), // 预计归还时间
+      phone_apply_number: 'BXJJY2022', // 手机端借用申请单号
+      delay_repaid_date: new Date(), // 本次申请延期借用预计归还时间
+      opera_time: '', // 计算时间
+      key: '', // 解锁码
     };
   }
 
@@ -576,19 +641,25 @@ class Computed extends React.Component {
     this.setState({
       borrow_date,
       repaid_date,
-      overdue_repaid_date: repaid_date,
+      delay_repaid_date: repaid_date,
     });
   }
 
-  onNumberChange(text) {
+  onApplyNumberChange(text) {
     this.setState({
-      number: text,
+      apply_number: text,
     });
   }
 
   onBorrowUserChange(text) {
     this.setState({
       borrow_user: text,
+    });
+  }
+
+  onMachineNumberChange(text) {
+    this.setState({
+      machine_number: text,
     });
   }
 
@@ -604,50 +675,38 @@ class Computed extends React.Component {
     });
   }
 
-  onOverdueRepaidDateChange(date) {
+  onPhoneApplyNumberChange(date) {
     this.setState({
-      repaid_date: date,
+      phone_apply_number: date,
     });
   }
 
-  onRenewalNumberChange(text) {
+  onDelayRepaidDateChange(text) {
     this.setState({
-      renewal_number: text,
-    });
-  }
-
-  onOverdueBorrowNumberChange(text) {
-    this.setState({
-      overdue_borrow_number: text,
-    });
-  }
-
-  onRenewalCycleChange(text) {
-    this.setState({
-      renewal_cycle: text,
+      delay_repaid_date: text,
     });
   }
 
   onReset() {
     let now = new Date();
-    let tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
+    let next = now.setMonth(now.getMonth() + 1);
+    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
     this.setState({
-      number: '', // 便携机编号
-      borrow_user: '', // 携带人
-      borrow_date: now, // 开始借用时间
-      repaid_date: tomorrow, // 预计归还日期
-      renewal_number: '1', // 续借次数
-      renewal_cycle: ['month'], // 续借周期
-      overdue_borrow_number: '1', // 已超期借用次数
-      overdue_repaid_date: tomorrow, // 超期归还时间
-      keys: [],
-      key_1: '',
-      key_2: '',
-      key_3: '',
-      key_4: '',
+      apply_number: '0409.2022', // 初始借用申请单号
+      borrow_user: '', // 携带人姓名
+      machine_number: 'BXJSJ0000', // 便携机编号
+      borrow_date: borrow_date, // 开始借用时间
+      repaid_date: repaid_date, // 预计归还时间
+      phone_apply_number: 'BXJJY2022', // 手机端借用申请单号
+      delay_repaid_date: repaid_date, // 本次申请延期借用预计归还时间
+      key: '', // 解锁码
     });
   }
 
+  /**
+   * 添加到历史
+   */
   addHistory() {
     let dataStr = JSON.stringify(this.state);
     let key = md5.hex(dataStr);
@@ -676,7 +735,7 @@ class Computed extends React.Component {
           });
         }
       })
-      .catch(err => {
+      .catch(() => {
         storage.save({
           key: 'ComputedHistory',
           data: [
@@ -691,32 +750,26 @@ class Computed extends React.Component {
 
   onComputed() {
     if (!this.state.borrow_user) {
-      Alert.alert('请输入携带人');
+      Alert.alert('请输入携带人姓名');
 
       return null;
     }
 
-    if (!this.state.number) {
+    if (!this.state.machine_number) {
       Alert.alert('请输入便携机编号');
       return null;
     }
 
     let borrow_date = parseTime(this.state.borrow_date, '{y}{m}{d}');
     let repaid_date = parseTime(this.state.repaid_date, '{y}{m}{d}');
-    // let renewal_cycle = this.state.renewal_cycle[0];
 
-    // let str = `${this.state.borrow_user}${this.state.number}${borrow_date}${repaid_date}${this.state.renewal_number}${renewal_cycle}`;
-    let str = `${this.state.borrow_user}${this.state.number}${borrow_date}${repaid_date}`;
+    let str = `${this.state.borrow_user}${this.state.machine_number}${borrow_date}${repaid_date}`;
 
-    let keys = computed_str(str, 6, 4);
+    let keys = computed_str(str, 6, 1);
 
     this.setState({
       opera_time: new Date().getTime(),
-      keys,
-      key_1: keys[0],
-      key_2: keys[1],
-      key_3: keys[2],
-      key_4: keys[3],
+      key: keys[0],
     });
 
     this.addHistory();
@@ -724,6 +777,10 @@ class Computed extends React.Component {
 
   onHistory() {
     this.props.onHistory();
+  }
+
+  onPageChange() {
+    this.props.change('loan');
   }
 
   onExit() {
@@ -735,13 +792,13 @@ class Computed extends React.Component {
   }
 
   render() {
-    const isResult = !!this.state.keys.length;
+    const isResult = !!this.state.key;
     return (
       <View style={ComputedStyles.container}>
         <SafeAreaView style={ComputedStyles.safe_container}>
           <ScrollView>
             <Header
-              title={'计算'}
+              title={'延期借用'}
               isEdit={true}
               isExit={true}
               onExit={() => this.onExit()}
@@ -749,16 +806,22 @@ class Computed extends React.Component {
             />
             <View style={ComputedStyles.computed_wrap}>
               <LabelInput
-                value={this.state.number}
-                label={'便携机编号\n(区分大小写)'}
+                value={this.state.apply_number}
+                label={'初始借用申请单号'}
                 maxLength={18}
-                textChange={text => this.onNumberChange(text)}
+                textChange={text => this.onApplyNumberChange(text)}
               />
               <LabelInput
                 value={this.state.borrow_user}
-                label={'携带人'}
+                label={'携带人姓名'}
                 maxLength={10}
                 textChange={text => this.onBorrowUserChange(text)}
+              />
+              <LabelInput
+                value={this.state.machine_number}
+                label={'便携机编号\n(区分大小写)'}
+                maxLength={18}
+                textChange={text => this.onMachineNumberChange(text)}
               />
               <List>
                 <DatePicker
@@ -782,22 +845,32 @@ class Computed extends React.Component {
                   <List.Item arrow="horizontal">预计归还时间</List.Item>
                 </DatePicker>
               </List>
+
               <LabelInput
-                value={this.state.overdue_borrow_number}
-                label={'已超期借用次数'}
-                keyboardType={'numeric'}
-                maxLength={1}
-                textChange={text => this.onOverdueBorrowNumberChange(text)}
+                value={this.state.phone_apply_number}
+                label={'手机端借用\n申请单号'}
+                maxLength={10}
+                textChange={text => this.onPhoneApplyNumberChange(text)}
               />
+
               <List>
                 <DatePicker
-                  value={this.state.overdue_repaid_date}
+                  value={this.state.delay_repaid_date}
                   mode="date"
                   minDate={new Date(1970, 1, 1)}
                   maxDate={new Date(2099, 12, 31)}
                   format="YYYY-MM-DD"
-                  onChange={date => this.onOverdueRepaidDateChange(date)}>
-                  <List.Item arrow="horizontal">超期归还时间</List.Item>
+                  onChange={date => this.onDelayRepaidDateChange(date)}>
+                  <List.Item arrow="horizontal">
+                    <View style={InputStyles.multiple_label_wrap}>
+                      <Text style={InputStyles.multiple_label_item}>
+                        本次申请延期借用
+                      </Text>
+                      <Text style={InputStyles.multiple_label_item}>
+                        预计归还时间
+                      </Text>
+                    </View>
+                  </List.Item>
                 </DatePicker>
               </List>
 
@@ -831,7 +904,7 @@ class Computed extends React.Component {
               /*<ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
                               key_4={this.state.key_4} />*/
 
-              <ComputedNewResult key_1={this.state.key_1} />
+              <ComputedNewResult key_1={this.state.key} />
             )}
             <View style={ComputedStyles.history_button}>
               <TouchableOpacity
@@ -840,7 +913,732 @@ class Computed extends React.Component {
                 <Text style={ComputedStyles.history_content}>历史记录 ></Text>
               </TouchableOpacity>
             </View>
+            <View style={ComputedStyles.history_button}>
+              <TouchableOpacity
+                onPress={() => this.onPageChange()}
+                activeOpacity={0.5}>
+                <Text style={ComputedStyles.history_content}>
+                  转借借用页面 >
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  }
+}
+
+/**
+ * 转借借用
+ */
+class LoanApplyComputed extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      apply_number: '0409.2022', // a 初始借用申请单号
+      borrow_user: '', // b 携带人姓名
+      machine_number: 'BXJSJ0000', // c 便携机编号
+      borrow_date: new Date(), // d 开始借用时间
+      repaid_date: new Date(), // e 预计归还时间
+      overdue_borrow_count: 0, // f 已超期借用次数
+      phone_apply_number: 'BXJJY2022', // g 手机端借用申请单号
+      delay_repaid_date: new Date(), // h 本次申请延期借用预计归还时间
+      loan_borrow_user_name: '', // i 新携带人姓名
+      loan_borrow_user_phone: '', // j 新携带人手机号
+      opera_time: '', // 计算时间
+      key: '', // 解锁码
+    };
+  }
+
+  componentDidMount() {
+    let now = new Date();
+    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
+    let next = now.setMonth(now.getMonth() + 1);
+    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
+
+    this.setState({
+      borrow_date,
+      repaid_date,
+      delay_repaid_date: repaid_date,
+    });
+  }
+
+  /**
+   * a 初始借用申请单号
+   * @param {String} text 初始借用申请单号
+   */
+  onApplyNumberChange(text) {
+    this.setState({
+      apply_number: text,
+    });
+  }
+
+  /**
+   * b 携带人姓名
+   * @param {String} text 携带人姓名
+   */
+  onBorrowUserChange(text) {
+    this.setState({
+      borrow_user: text,
+    });
+  }
+
+  /**
+   * c 便携机编号
+   * @param {*} text 便携机编号
+   */
+  onMachineNumberChange(text) {
+    this.setState({
+      machine_number: text,
+    });
+  }
+
+  /**
+   * d 开始借用时间
+   * @param {*} date 开始借用时间
+   */
+  onBorrowDateChange(date) {
+    this.setState({
+      borrow_date: date,
+    });
+  }
+
+  /**
+   * e 预计归还时间
+   * @param {*} date 预计归还时间
+   */
+  onRepaidDateChange(date) {
+    this.setState({
+      repaid_date: date,
+    });
+  }
+
+  /**
+   * f、已超期借用次数
+   * @param {*} date 已超期借用次数
+   */
+  onOverdueBorrowCountChange(date) {
+    this.setState({
+      overdue_borrow_count: date,
+    });
+  }
+
+  /**
+   * g 手机端借用申请单号
+   * @param {*} date 手机端借用申请单号
+   */
+  onPhoneApplyNumberChange(date) {
+    this.setState({
+      phone_apply_number: date,
+    });
+  }
+
+  /**
+   * h 本次申请延期借用预计归还时间
+   * @param {*} text 本次申请延期借用预计归还时间
+   */
+  onDelayRepaidDateChange(text) {
+    this.setState({
+      delay_repaid_date: text,
+    });
+  }
+
+  /**
+   * i、输入新携带人姓名
+   * @param {*} text 输入新携带人姓名
+   */
+  onLoanBorrowUserNameChange(text) {
+    this.setState({
+      loan_borrow_user_name: text,
+    });
+  }
+
+  /**
+   * j、新携带人手机号
+   * @param {*} text 新携带人手机号
+   */
+  onLoanBorrowUserPhoneChange(text) {
+    this.setState({
+      loan_borrow_user_phone: text,
+    });
+  }
+
+  onReset() {
+    let now = new Date();
+    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
+    let next = now.setMonth(now.getMonth() + 1);
+    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
+    this.setState({
+      apply_number: '0409.2022', // a 初始借用申请单号
+      borrow_user: '', // b 携带人姓名
+      machine_number: 'BXJSJ0000', // c 便携机编号
+      borrow_date: borrow_date, // d 开始借用时间
+      repaid_date: repaid_date, // e 预计归还时间
+      overdue_borrow_count: 0, // f 已超期借用次数
+      phone_apply_number: 'BXJJY2022', // g 手机端借用申请单号
+      delay_repaid_date: repaid_date, // h 本次申请延期借用预计归还时间
+      loan_borrow_user_name: '', // i 新携带人姓名
+      loan_borrow_user_phone: '', // j 新携带人手机号
+      opera_time: '', // 计算时间
+      key: '', // 解锁码
+    });
+  }
+
+  /**
+   * 添加到历史
+   */
+  addHistory() {
+    let dataStr = JSON.stringify(this.state);
+    let key = md5.hex(dataStr);
+
+    storage
+      .load({
+        key: 'LoanApplyComputedHistory',
+      })
+      .then(res => {
+        let index = res.findIndex(item => item.key === key);
+
+        if (index === -1) {
+          storage.save({
+            key: 'LoanApplyComputedHistory',
+            data: [].concat([{key, ...this.state}], res),
+          });
+        } else {
+          res.forEach(item => {
+            if (item.key === key) {
+              item.opera_time = new Date().getTime();
+            }
+          });
+          storage.save({
+            key: 'LoanApplyComputedHistory',
+            data: [...res],
+          });
+        }
+      })
+      .catch(() => {
+        storage.save({
+          key: 'LoanApplyComputedHistory',
+          data: [
+            {
+              key,
+              ...this.state,
+            },
+          ],
+        });
+      });
+  }
+
+  onComputed() {
+    if (!this.state.loan_borrow_user_name) {
+      Alert.alert('请输入新携带人姓名');
+
+      return null;
+    }
+
+    if (!this.state.machine_number) {
+      Alert.alert('请输入便携机编号');
+      return null;
+    }
+
+    let borrow_date = parseTime(this.state.borrow_date, '{y}{m}{d}');
+    let delay_repaid_date = parseTime(
+      this.state.delay_repaid_date,
+      '{y}{m}{d}',
+    );
+
+    let str = `${this.state.loan_borrow_user_name}${this.state.machine_number}${borrow_date}${delay_repaid_date}`;
+
+    let keys = computed_str(str, 6, 1);
+
+    this.setState({
+      opera_time: new Date().getTime(),
+      key: keys[0],
+    });
+
+    this.addHistory();
+  }
+
+  onHistory() {
+    this.props.onHistory();
+  }
+
+  onPageChange() {
+    this.props.change('delay');
+  }
+
+  onExit() {
+    this.props.onExit();
+  }
+
+  onEdit() {
+    this.props.onEdit();
+  }
+
+  render() {
+    const isResult = !!this.state.key;
+    return (
+      <View style={ComputedStyles.container}>
+        <SafeAreaView style={ComputedStyles.safe_container}>
+          <ScrollView>
+            <Header
+              title={'转借借用'}
+              isEdit={true}
+              isExit={true}
+              onExit={() => this.onExit()}
+              onEdit={() => this.onEdit()}
+            />
+            <View style={ComputedStyles.computed_wrap}>
+              <LabelInput
+                value={this.state.apply_number}
+                label={'初始借用申请单号'}
+                maxLength={18}
+                textChange={text => this.onApplyNumberChange(text)}
+              />
+              <LabelInput
+                value={this.state.borrow_user}
+                label={'携带人姓名'}
+                maxLength={10}
+                textChange={text => this.onBorrowUserChange(text)}
+              />
+              <LabelInput
+                value={this.state.machine_number}
+                label={'便携机编号\n(区分大小写)'}
+                maxLength={18}
+                textChange={text => this.onMachineNumberChange(text)}
+              />
+              <List>
+                <DatePicker
+                  value={this.state.borrow_date}
+                  mode="date"
+                  minDate={new Date(1970, 1, 1)}
+                  maxDate={new Date(2099, 12, 31)}
+                  format="YYYY-MM-DD"
+                  onChange={date => this.onBorrowDateChange(date)}>
+                  <List.Item arrow="horizontal">开始借用时间</List.Item>
+                </DatePicker>
+              </List>
+              <List>
+                <DatePicker
+                  value={this.state.repaid_date}
+                  mode="date"
+                  minDate={new Date(1970, 1, 1)}
+                  maxDate={new Date(2099, 12, 31)}
+                  format="YYYY-MM-DD"
+                  onChange={date => this.onRepaidDateChange(date)}>
+                  <List.Item arrow="horizontal">预计归还时间</List.Item>
+                </DatePicker>
+              </List>
+
+              <LabelInput
+                value={this.state.overdue_borrow_count}
+                label={'已超期借用次数'}
+                keyboardType={'numeric'}
+                maxLength={1}
+                textChange={text => this.onOverdueBorrowCountChange(text)}
+              />
+
+              <LabelInput
+                value={this.state.phone_apply_number}
+                label={'手机端借用\n申请单号'}
+                maxLength={10}
+                textChange={text => this.onPhoneApplyNumberChange(text)}
+              />
+
+              <List>
+                <DatePicker
+                  value={this.state.delay_repaid_date}
+                  mode="date"
+                  minDate={new Date(1970, 1, 1)}
+                  maxDate={new Date(2099, 12, 31)}
+                  format="YYYY-MM-DD"
+                  onChange={date => this.onDelayRepaidDateChange(date)}>
+                  <List.Item arrow="horizontal">
+                    <View style={InputStyles.multiple_label_wrap}>
+                      <Text style={InputStyles.multiple_label_item}>
+                        本次申请延期借用
+                      </Text>
+                      <Text style={InputStyles.multiple_label_item}>
+                        预计归还时间
+                      </Text>
+                    </View>
+                  </List.Item>
+                </DatePicker>
+              </List>
+
+              <LabelInput
+                value={this.state.loan_borrow_user_name}
+                label={'新携带人姓名'}
+                maxLength={18}
+                textChange={text => this.onLoanBorrowUserNameChange(text)}
+              />
+
+              <LabelInput
+                value={this.state.loan_borrow_user_phone}
+                label={'新携带人手机号'}
+                maxLength={11}
+                textChange={text => this.onLoanBorrowUserPhoneChange(text)}
+              />
+
+              {/*<LabelInput
+                value={this.state.renewal_number}
+                label={"续借次数"}
+                keyboardType={"numeric"}
+                maxLength={1}
+                textChange={text => this.onRenewalNumberChange(text)}
+              />
+              <List>
+                <Picker
+                  data={cycleData}
+                  cols={1}
+                  value={this.state.renewal_cycle}
+                  onChange={text => this.onRenewalCycleChange(text)}>
+                  <List.Item arrow="horizontal">续借周期</List.Item>
+                </Picker>
+              </List>*/}
+
+              <View style={ComputedStyles.button_wrap}>
+                <CommonButton title={'重置'} click={() => this.onReset()} />
+                <CommonButton
+                  type={'primary'}
+                  title={'计算转借解锁码'}
+                  click={() => this.onComputed()}
+                />
+              </View>
+            </View>
+            {isResult && (
+              /*<ComputedResult key_1={this.state.key_1} key_2={this.state.key_2} key_3={this.state.key_3}
+                              key_4={this.state.key_4} />*/
+
+              <ComputedNewResult key_1={this.state.key} />
+            )}
+            <View style={ComputedStyles.history_button}>
+              <TouchableOpacity
+                onPress={() => this.onHistory()}
+                activeOpacity={0.5}>
+                <Text style={ComputedStyles.history_content}>历史记录 ></Text>
+              </TouchableOpacity>
+            </View>
+            <View style={ComputedStyles.history_button}>
+              <TouchableOpacity
+                onPress={() => this.onPageChange()}
+                activeOpacity={0.5}>
+                <Text style={ComputedStyles.history_content}>
+                  延期借用页面 >
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  }
+}
+
+class DelayApplyHistory extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      historyList: [],
+    };
+  }
+
+  componentDidMount() {
+    storage
+      .load({
+        key: 'ComputedHistory',
+      })
+      .then(res => {
+        this.setState({
+          historyList: res,
+        });
+      })
+      .catch(() => {
+        this.setState({
+          historyList: [],
+        });
+      });
+  }
+
+  onBack() {
+    this.props.change('delay');
+  }
+
+  onExportExcel() {
+    let data = this.state.historyList.reduce((r, c) => {
+      r.push({
+        初始借用申请单号: c.apply_number,
+        携带人姓名: c.borrow_user,
+        便携机编号: c.machine_number,
+        开始借用时间: parseTime(new Date(c.borrow_date), '{y}-{m}-{d}'),
+        预计归还日期: parseTime(new Date(c.repaid_date), '{y}-{m}-{d}'),
+        手机端借用申请单号: c.phone_apply_number,
+        本次申请延期借用预计归还时间: parseTime(
+          new Date(c.delay_repaid_date),
+          '{y}-{m}-{d}',
+        ),
+        计算时间: parseTime(new Date(c.delay_repaid_date), '{y}-{m}-{d}'),
+      });
+      return r;
+    }, []);
+    exportExcel(data, '计算项目-延期借用记录');
+  }
+
+  getItem({item}) {
+    const repaid_date = parseTime(new Date(item.repaid_date), '{y}-{m}-{d}');
+    const borrow_date = parseTime(new Date(item.borrow_date), '{y}-{m}-{d}');
+    const delay_repaid_date = parseTime(
+      new Date(item.delay_repaid_date),
+      '{y}-{m}-{d}',
+    );
+    const opera_time = parseTime(
+      new Date(item.opera_time),
+      '{y}-{m}-{d} {h}:{i}:{s}',
+    );
+    return (
+      <View style={HistoryStyles.list_item_wrap}>
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>初始借用申请单号</Text>
+            <Text style={HistoryStyles.row_content}>{item.apply_number}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>手机端借用申请单号</Text>
+            <Text style={HistoryStyles.row_content}>
+              {item.phone_apply_number}
+            </Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>携带人姓名</Text>
+            <Text style={HistoryStyles.row_content}>{item.borrow_user}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>便携机编号</Text>
+            <Text style={HistoryStyles.row_content}>{item.machine_number}</Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>开始借用时间</Text>
+            <Text style={HistoryStyles.row_content}>{borrow_date}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>预计归还时间</Text>
+            <Text style={HistoryStyles.row_content}>{repaid_date}</Text>
+          </View>
+        </View>
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>操作时间</Text>
+            <Text style={HistoryStyles.row_content}>{opera_time}</Text>
+          </View>
+        </View>
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_full_item_wrap}>
+            <Text style={HistoryStyles.row_title}>
+              本次申请延期借用预计归还时间
+            </Text>
+            <Text style={HistoryStyles.row_content}>{delay_repaid_date}</Text>
+          </View>
+        </View>
+        <ComputedNewResult key_1={item.key} />
+      </View>
+    );
+  }
+
+  render() {
+    const historyList = this.state.historyList.sort(
+      (a, b) => b.opera_time - a.opera_time,
+    );
+    return (
+      <View style={HistoryStyles.container}>
+        <SafeAreaView style={HistoryStyles.safe_container}>
+          <Header
+            title={'延期借用历史记录'}
+            isBack={true}
+            isExportExcel={true}
+            back={() => this.onBack()}
+            onExportExcel={() => this.onExportExcel()}
+          />
+          <FlatList
+            style={HistoryStyles.list_wrap}
+            data={historyList}
+            renderItem={item => this.getItem(item)}
+            keyExtractor={item => item.key}
+          />
+        </SafeAreaView>
+      </View>
+    );
+  }
+}
+
+class LoanApplyHistory extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      historyList: [],
+    };
+  }
+
+  componentDidMount() {
+    storage
+      .load({
+        key: 'LoanApplyComputedHistory',
+      })
+      .then(res => {
+        this.setState({
+          historyList: res,
+        });
+      })
+      .catch(() => {
+        this.setState({
+          historyList: [],
+        });
+      });
+  }
+
+  onBack() {
+    this.props.change('loan');
+  }
+
+  onExportExcel() {
+    let data = this.state.historyList.reduce((r, c) => {
+      r.push({
+        初始借用申请单号: c.apply_number, // a
+        携带人姓名: c.borrow_user, // b
+        便携机编号: c.machine_number, // c
+        开始借用时间: parseTime(new Date(c.borrow_date), '{y}-{m}-{d}'), // d
+        预计归还日期: parseTime(new Date(c.repaid_date), '{y}-{m}-{d}'), // e
+        已超期借用次数: c.overdue_borrow_count, // f
+        手机端借用申请单号: c.phone_apply_number, // g
+        本次申请延期借用预计归还时间: parseTime(
+          new Date(c.delay_repaid_date),
+          '{y}-{m}-{d}',
+        ), // h
+        新携带人姓名: c.loan_borrow_user_name, // i
+        新携带人手机号: c.loan_borrow_user_phone, // j
+        计算时间: parseTime(new Date(c.delay_repaid_date), '{y}-{m}-{d}'),
+      });
+      return r;
+    }, []);
+    exportExcel(data, '计算项目-转借借用记录');
+  }
+
+  getItem({item}) {
+    const repaid_date = parseTime(new Date(item.repaid_date), '{y}-{m}-{d}');
+    const borrow_date = parseTime(new Date(item.borrow_date), '{y}-{m}-{d}');
+    const delay_repaid_date = parseTime(
+      new Date(item.delay_repaid_date),
+      '{y}-{m}-{d}',
+    );
+    const opera_time = parseTime(
+      new Date(item.opera_time),
+      '{y}-{m}-{d} {h}:{i}:{s}',
+    );
+    return (
+      <View style={HistoryStyles.loan_list_item_wrap}>
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>初始借用申请单号</Text>
+            <Text style={HistoryStyles.row_content}>{item.apply_number}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>手机端借用申请单号</Text>
+            <Text style={HistoryStyles.row_content}>
+              {item.phone_apply_number}
+            </Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>携带人姓名</Text>
+            <Text style={HistoryStyles.row_content}>{item.borrow_user}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>便携机编号</Text>
+            <Text style={HistoryStyles.row_content}>{item.machine_number}</Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>开始借用时间</Text>
+            <Text style={HistoryStyles.row_content}>{borrow_date}</Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>预计归还时间</Text>
+            <Text style={HistoryStyles.row_content}>{repaid_date}</Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>新携带人姓名</Text>
+            <Text style={HistoryStyles.row_content}>
+              {item.loan_borrow_user_name}
+            </Text>
+          </View>
+          <View style={HistoryStyles.list_row_item_wrap}>
+            <Text style={HistoryStyles.row_title}>新携带人手机号</Text>
+            <Text style={HistoryStyles.row_content}>
+              {item.loan_borrow_user_phone}
+            </Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_full_item_wrap}>
+            <Text style={HistoryStyles.row_title}>已超期借用次数</Text>
+            <Text style={HistoryStyles.row_content}>
+              {item.overdue_borrow_count}
+            </Text>
+          </View>
+        </View>
+
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_full_item_wrap}>
+            <Text style={HistoryStyles.row_title}>操作时间</Text>
+            <Text style={HistoryStyles.row_content}>{opera_time}</Text>
+          </View>
+        </View>
+        <View style={HistoryStyles.list_row_wrap}>
+          <View style={HistoryStyles.list_row_full_item_wrap}>
+            <Text style={HistoryStyles.row_title}>
+              本次申请延期借用预计归还时间
+            </Text>
+            <Text style={HistoryStyles.row_content}>{delay_repaid_date}</Text>
+          </View>
+        </View>
+        <ComputedNewResult key_1={item.key} />
+      </View>
+    );
+  }
+
+  render() {
+    const historyList = this.state.historyList.sort(
+      (a, b) => b.opera_time - a.opera_time,
+    );
+    return (
+      <View style={HistoryStyles.container}>
+        <SafeAreaView style={HistoryStyles.safe_container}>
+          <Header
+            title={'转借借用历史记录'}
+            isBack={true}
+            isExportExcel={true}
+            back={() => this.onBack()}
+            onExportExcel={() => this.onExportExcel()}
+          />
+          <FlatList
+            style={HistoryStyles.list_wrap}
+            data={historyList}
+            renderItem={item => this.getItem(item)}
+            keyExtractor={item => item.key}
+          />
         </SafeAreaView>
       </View>
     );
@@ -956,133 +1754,6 @@ class EditPassword extends React.Component {
   }
 }
 
-class History extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      historyList: [],
-    };
-  }
-
-  componentDidMount() {
-    storage
-      .load({
-        key: 'ComputedHistory',
-      })
-      .then(res => {
-        this.setState({
-          historyList: res,
-        });
-      })
-      .catch(err => {
-        this.setState({
-          historyList: [],
-        });
-      });
-  }
-
-  onBack() {
-    this.props.onClose();
-  }
-
-  onExportExcel() {
-    let data = this.state.historyList.reduce((r, c)=>{
-      r.push({
-        便携机编号: c.number,
-        携带人: c.borrow_user,
-        开始借用时间: parseTime(new Date(c.borrow_date), '{y}-{m}-{d}'),
-        预计归还日期: parseTime(new Date(c.repaid_date), '{y}-{m}-{d}'),
-        已超期借用次数: c.overdue_borrow_number,
-        超期归还时间: parseTime(new Date(c.overdue_repaid_date), '{y}-{m}-{d}'),
-      });
-      return r;
-    }, []);
-    exportExcel(data);
-  }
-
-  getItem({item}) {
-    const repaid_date = parseTime(new Date(item.repaid_date), '{y}-{m}-{d}');
-    const borrow_date = parseTime(new Date(item.borrow_date), '{y}-{m}-{d}');
-    const opera_time = parseTime(
-      new Date(item.opera_time),
-      '{y}-{m}-{d} {h}:{i}:{s}',
-    );
-    const renewal_cycle = item.renewal_cycle[0];
-
-    // const renewal_cycle_name = cycleData.find(c => c.value === renewal_cycle).label;
-
-    return (
-      <View style={HistoryStyles.list_item_wrap}>
-        <View style={HistoryStyles.list_row_wrap}>
-          <View style={HistoryStyles.list_row_item_wrap}>
-            <Text style={HistoryStyles.row_title}>携带人</Text>
-            <Text style={HistoryStyles.row_content}>{item.borrow_user}</Text>
-          </View>
-          <View style={HistoryStyles.list_row_item_wrap}>
-            <Text style={HistoryStyles.row_title}>便携机编号</Text>
-            <Text style={HistoryStyles.row_content}>{item.number}</Text>
-          </View>
-        </View>
-        <View style={HistoryStyles.list_row_wrap}>
-          <View style={HistoryStyles.list_row_item_wrap}>
-            <Text style={HistoryStyles.row_title}>借用时间</Text>
-            <Text style={HistoryStyles.row_content}>{borrow_date}</Text>
-          </View>
-          <View style={HistoryStyles.list_row_item_wrap}>
-            <Text style={HistoryStyles.row_title}>归还时间</Text>
-            <Text style={HistoryStyles.row_content}>{repaid_date}</Text>
-          </View>
-        </View>
-        {/*<View style={HistoryStyles.list_row_wrap}>
-        <View style={HistoryStyles.list_row_item_wrap}>
-          <Text style={HistoryStyles.row_title}>续借次数</Text>
-          <Text style={HistoryStyles.row_content}>{item.renewal_number}</Text>
-        </View>
-        <View style={HistoryStyles.list_row_item_wrap}>
-          <Text style={HistoryStyles.row_title}>续借周期</Text>
-          <Text style={HistoryStyles.row_content}>{renewal_cycle_name}</Text>
-        </View>
-      </View>*/}
-        <View style={HistoryStyles.list_row_wrap}>
-          <View style={HistoryStyles.list_row_item_wrap}>
-            <Text style={HistoryStyles.row_title}>操作时间</Text>
-            <Text style={HistoryStyles.row_content}>{opera_time}</Text>
-          </View>
-        </View>
-
-        {/*<ComputedResult key_1={item.key_1} key_2={item.key_2} key_3={item.key_3}
-                      key_4={item.key_4} />*/}
-        <ComputedNewResult key_1={item.key_1} />
-      </View>
-    );
-  }
-
-  render() {
-    const historyList = this.state.historyList.sort(
-      (a, b) => b.opera_time - a.opera_time,
-    );
-    return (
-      <View style={HistoryStyles.container}>
-        <SafeAreaView style={HistoryStyles.safe_container}>
-          <Header
-            title={'历史记录'}
-            isBack={true}
-            isExportExcel={true}
-            back={() => this.onBack()}
-            onExportExcel={() => this.onExportExcel()}
-          />
-          <FlatList
-            style={HistoryStyles.list_wrap}
-            data={historyList}
-            renderItem={item => this.getItem(item)}
-            keyExtractor={item => item.key}
-          />
-        </SafeAreaView>
-      </View>
-    );
-  }
-}
-
 /**
  * 主页面
  */
@@ -1092,7 +1763,7 @@ class App extends React.Component {
     this.state = {
       isLogin: false, // 是否登陆
       isAuthorize: false, // 是否授权
-      page: 'authorize', // computed password history authorize
+      page: 'authorize', // computed password authorize
     };
   }
 
@@ -1125,7 +1796,7 @@ class App extends React.Component {
           toAuthorizePage();
         }
       })
-      .catch(err => {
+      .catch(() => {
         toAuthorizePage();
       });
   }
@@ -1137,12 +1808,6 @@ class App extends React.Component {
   closeEditPassword() {
     this.setState({
       page: 'computed',
-    });
-  }
-
-  onHistory() {
-    this.setState({
-      page: 'history',
     });
   }
 
@@ -1190,14 +1855,7 @@ class App extends React.Component {
               <Computed
                 onEdit={() => this.onEdit()}
                 onExit={() => this.onExit()}
-                onHistory={() => this.onHistory()}
               />
-            )}
-
-          {this.state.isAuthorize &&
-            this.state.isLogin &&
-            this.state.page === 'history' && (
-              <History onClose={() => this.closeHistory()} />
             )}
 
           {this.state.isAuthorize &&
@@ -1296,7 +1954,7 @@ const InputStyles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   row_label: {
-    width: 140,
+    width: width / 2,
     height: 50,
     paddingLeft: 16,
     color: '#000000',
@@ -1304,9 +1962,21 @@ const InputStyles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   row_input: {
-    width: width - 140,
+    width: width / 2,
     height: 50,
     color: '#808080',
+    fontSize: 17,
+    textAlignVertical: 'center',
+  },
+  multiple_label_wrap: {
+    width: width / 2,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  }, // 多行标签外层容器
+  multiple_label_item: {
+    color: '#000000',
     fontSize: 17,
     textAlignVertical: 'center',
   },
@@ -1454,6 +2124,7 @@ const ComputedStyles = StyleSheet.create({
   },
   computed_wrap: {
     backgroundColor: '#ffffff',
+    paddingBottom: 10,
   },
   button_wrap: {
     height: 80,
@@ -1523,7 +2194,14 @@ const HistoryStyles = StyleSheet.create({
     height: height - 48,
   },
   list_item_wrap: {
-    height: 180 + 170 - 50,
+    height: 60 * 5 + 170 - 50,
+    width,
+    backgroundColor: '#fff',
+    marginBottom: 18,
+  },
+
+  loan_list_item_wrap: {
+    height: 60 * 7 + 170 - 50,
     width,
     backgroundColor: '#fff',
     marginBottom: 18,
@@ -1538,6 +2216,14 @@ const HistoryStyles = StyleSheet.create({
   },
   list_row_item_wrap: {
     width: width / 2,
+    height: '100%',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingLeft: 18,
+  },
+  list_row_full_item_wrap: {
+    width: width,
     height: '100%',
     flexDirection: 'column',
     justifyContent: 'center',

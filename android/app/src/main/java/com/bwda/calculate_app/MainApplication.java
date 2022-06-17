@@ -1,4 +1,4 @@
-package com.react_native_template_67;
+package com.bwda.calculate_app;
 
 import android.app.Application;
 import android.content.Context;
