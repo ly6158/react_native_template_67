@@ -808,7 +808,7 @@ class DelayApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.apply_number}
                 label={'初始借用申请单号'}
-                maxLength={18}
+                maxLength={20}
                 textChange={text => this.onApplyNumberChange(text)}
               />
               <LabelInput
@@ -849,7 +849,7 @@ class DelayApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.phone_apply_number}
                 label={'手机端借用\n申请单号'}
-                maxLength={10}
+                maxLength={20}
                 textChange={text => this.onPhoneApplyNumberChange(text)}
               />
 
@@ -1192,7 +1192,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.apply_number}
                 label={'初始借用申请单号'}
-                maxLength={18}
+                maxLength={20}
                 textChange={text => this.onApplyNumberChange(text)}
               />
               <LabelInput
@@ -1204,7 +1204,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.machine_number}
                 label={'便携机编号\n(区分大小写)'}
-                maxLength={18}
+                maxLength={20}
                 textChange={text => this.onMachineNumberChange(text)}
               />
               <List>
@@ -1241,7 +1241,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.phone_apply_number}
                 label={'手机端借用\n申请单号'}
-                maxLength={10}
+                maxLength={20}
                 textChange={text => this.onPhoneApplyNumberChange(text)}
               />
 
@@ -1269,7 +1269,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.loan_borrow_user_name}
                 label={'新携带人姓名'}
-                maxLength={18}
+                maxLength={10}
                 textChange={text => this.onLoanBorrowUserNameChange(text)}
               />
 
