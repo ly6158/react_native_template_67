@@ -155,8 +155,8 @@ class Login extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      account: '',
-      password: '',
+      account: 'admin',
+      password: '123456',
     };
   }
 
@@ -623,27 +623,16 @@ class DelayApplyComputed extends React.Component {
       apply_number: '0409.2022', // 初始借用申请单号
       borrow_user: '', // 携带人姓名
       machine_number: 'BXJSJ0000', // 便携机编号
-      borrow_date: new Date(), // 开始借用时间
-      repaid_date: new Date(), // 预计归还时间
+      borrow_date: '', // 开始借用时间
+      repaid_date: '', // 预计归还时间
       phone_apply_number: 'BXJJY2022', // 手机端借用申请单号
-      delay_repaid_date: new Date(), // 本次申请延期借用预计归还时间
+      delay_repaid_date: '', // 本次申请延期借用预计归还时间
       opera_time: '', // 计算时间
       key: '', // 解锁码
     };
   }
 
-  componentDidMount() {
-    let now = new Date();
-    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
-    let next = now.setMonth(now.getMonth() + 1);
-    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
-
-    this.setState({
-      borrow_date,
-      repaid_date,
-      delay_repaid_date: repaid_date,
-    });
-  }
+  componentDidMount() {}
 
   onApplyNumberChange(text) {
     this.setState({
@@ -688,18 +677,14 @@ class DelayApplyComputed extends React.Component {
   }
 
   onReset() {
-    let now = new Date();
-    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
-    let next = now.setMonth(now.getMonth() + 1);
-    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
     this.setState({
       apply_number: '0409.2022', // 初始借用申请单号
       borrow_user: '', // 携带人姓名
       machine_number: 'BXJSJ0000', // 便携机编号
-      borrow_date: borrow_date, // 开始借用时间
-      repaid_date: repaid_date, // 预计归还时间
+      borrow_date: '', // 开始借用时间
+      repaid_date: '', // 预计归还时间
       phone_apply_number: 'BXJJY2022', // 手机端借用申请单号
-      delay_repaid_date: repaid_date, // 本次申请延期借用预计归还时间
+      delay_repaid_date: '', // 本次申请延期借用预计归还时间
       key: '', // 解锁码
     });
   }
@@ -749,9 +734,25 @@ class DelayApplyComputed extends React.Component {
   }
 
   onComputed() {
+    let apply_numberLength = `${this.state.apply_number.toString().length}`;
+    let machine_numberLength = `${this.state.machine_number.toString().length}`;
+    let phone_apply_numberLength = `${
+      this.state.phone_apply_number.toString().length
+    }`;
+    if (apply_numberLength != 17) {
+      Alert.alert('初始借用申请单号必须为17位，请重新输入');
+      return null;
+    }
     if (!this.state.borrow_user) {
       Alert.alert('请输入携带人姓名');
-
+      return null;
+    }
+    if (machine_numberLength != 12) {
+      Alert.alert('便携机编号必须为12位，请重新输入');
+      return null;
+    }
+    if (phone_apply_numberLength != 16) {
+      Alert.alert('手机端借用申请单号必须为16位，请重新输入');
       return null;
     }
 
@@ -808,7 +809,7 @@ class DelayApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.apply_number}
                 label={'初始借用申请单号'}
-                maxLength={20}
+                maxLength={17}
                 textChange={text => this.onApplyNumberChange(text)}
               />
               <LabelInput
@@ -820,7 +821,7 @@ class DelayApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.machine_number}
                 label={'便携机编号\n(区分大小写)'}
-                maxLength={18}
+                maxLength={12}
                 textChange={text => this.onMachineNumberChange(text)}
               />
               <List>
@@ -849,7 +850,7 @@ class DelayApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.phone_apply_number}
                 label={'手机端借用\n申请单号'}
-                maxLength={20}
+                maxLength={16}
                 textChange={text => this.onPhoneApplyNumberChange(text)}
               />
 
@@ -939,11 +940,11 @@ class LoanApplyComputed extends React.Component {
       apply_number: '0409.2022', // a 初始借用申请单号
       borrow_user: '', // b 携带人姓名
       machine_number: 'BXJSJ0000', // c 便携机编号
-      borrow_date: new Date(), // d 开始借用时间
-      repaid_date: new Date(), // e 预计归还时间
+      borrow_date: '', // d 开始借用时间
+      repaid_date: '', // e 预计归还时间
       overdue_borrow_count: 0, // f 已超期借用次数
       phone_apply_number: 'BXJJY2022', // g 手机端借用申请单号
-      delay_repaid_date: new Date(), // h 本次申请延期借用预计归还时间
+      delay_repaid_date: '', // h 本次申请延期借用预计归还时间
       loan_borrow_user_name: '', // i 新携带人姓名
       loan_borrow_user_phone: '', // j 新携带人手机号
       opera_time: '', // 计算时间
@@ -951,18 +952,7 @@ class LoanApplyComputed extends React.Component {
     };
   }
 
-  componentDidMount() {
-    let now = new Date();
-    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
-    let next = now.setMonth(now.getMonth() + 1);
-    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
-
-    this.setState({
-      borrow_date,
-      repaid_date,
-      delay_repaid_date: repaid_date,
-    });
-  }
+  componentDidMount() {}
 
   /**
    * a 初始借用申请单号
@@ -1065,19 +1055,15 @@ class LoanApplyComputed extends React.Component {
   }
 
   onReset() {
-    let now = new Date();
-    const borrow_date = new Date(parseTime(now, '{y}-{m}-{d}'));
-    let next = now.setMonth(now.getMonth() + 1);
-    const repaid_date = new Date(parseTime(next, '{y}-{m}-{d}'));
     this.setState({
       apply_number: '0409.2022', // a 初始借用申请单号
       borrow_user: '', // b 携带人姓名
       machine_number: 'BXJSJ0000', // c 便携机编号
-      borrow_date: borrow_date, // d 开始借用时间
-      repaid_date: repaid_date, // e 预计归还时间
+      borrow_date: '', // d 开始借用时间
+      repaid_date: '', // e 预计归还时间
       overdue_borrow_count: 0, // f 已超期借用次数
       phone_apply_number: 'BXJJY2022', // g 手机端借用申请单号
-      delay_repaid_date: repaid_date, // h 本次申请延期借用预计归还时间
+      delay_repaid_date: '', // h 本次申请延期借用预计归还时间
       loan_borrow_user_name: '', // i 新携带人姓名
       loan_borrow_user_phone: '', // j 新携带人手机号
       opera_time: '', // 计算时间
@@ -1130,6 +1116,23 @@ class LoanApplyComputed extends React.Component {
   }
 
   onComputed() {
+    let apply_numberLength = `${this.state.apply_number.toString().length}`;
+    let machine_numberLength = `${this.state.machine_number.toString().length}`;
+    let phone_apply_numberLength = `${
+      this.state.phone_apply_number.toString().length
+    }`;
+    if (apply_numberLength != 17) {
+      Alert.alert('初始借用申请单号必须为17位，请重新输入');
+      return null;
+    }
+    if (machine_numberLength != 12) {
+      Alert.alert('便携机编号必须为12位，请重新输入');
+      return null;
+    }
+    if (phone_apply_numberLength != 16) {
+      Alert.alert('手机端借用申请单号必须为16位，请重新输入');
+      return null;
+    }
     if (!this.state.loan_borrow_user_name) {
       Alert.alert('请输入新携带人姓名');
 
@@ -1192,7 +1195,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.apply_number}
                 label={'初始借用申请单号'}
-                maxLength={20}
+                maxLength={17}
                 textChange={text => this.onApplyNumberChange(text)}
               />
               <LabelInput
@@ -1204,7 +1207,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.machine_number}
                 label={'便携机编号\n(区分大小写)'}
-                maxLength={20}
+                maxLength={12}
                 textChange={text => this.onMachineNumberChange(text)}
               />
               <List>
@@ -1241,7 +1244,7 @@ class LoanApplyComputed extends React.Component {
               <LabelInput
                 value={this.state.phone_apply_number}
                 label={'手机端借用\n申请单号'}
-                maxLength={20}
+                maxLength={16}
                 textChange={text => this.onPhoneApplyNumberChange(text)}
               />
 
